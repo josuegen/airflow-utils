@@ -2,6 +2,8 @@
 Kubernetes Pod Operator (KPO) Factory
 
 Overrides a GKEStartPodOperator to set default values for compliance
+
+Author: josuegen@google.com
 """
 
 import os
