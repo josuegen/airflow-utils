@@ -3,7 +3,7 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 
 default_args = {
-    'owner': 'CVS',
+    'owner': 'google',
     'depends_on_past': True,
     'email': ['josuegen@google.com'],
     'email_on_failure': True,
