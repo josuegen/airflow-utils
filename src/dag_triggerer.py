@@ -1,3 +1,17 @@
+"""
+DAG triggerer.
+
+This DAG demonstrates how to trigger another DAG:
+    1. In the same Composer Environment. Using the TriggerDagRunOperator.
+    2. In another Composer Environment. Using HTTP requests, Google Auth and Python decortated tasks.
+
+The triggered DAGs are in tyhe same folder as this DAG:
+externally_triggered_dag.py and externally_triggered_dag.py
+
+Author: josuegen@google.com
+"""
+
+
 from __future__ import annotations
 from datetime import datetime, timedelta
 import json
@@ -5,10 +19,7 @@ import json
 from airflow import DAG
 from airflow.decorators import task
 from airflow.operators.empty import EmptyOperator
-from airflow.providers.http.sensors.http import HttpSensor
-from airflow.providers.http.operators.http import HttpOperator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
-from airflow.providers.google.cloud.sensors.gcs import GCSObjectExistenceSensor
 
 from typing import Any
 import google.auth
@@ -16,7 +27,7 @@ from google.auth.transport.requests import AuthorizedSession
 import requests
 
 default_args = {
-    'owner': 'CVS',
+    'owner': 'google',
     'depends_on_past': True,
     'email': ['josuegen@google.com'],
     'email_on_failure': True,
@@ -32,70 +43,6 @@ dag = DAG(
     default_args=default_args,
     catchup=False,
     tags=["gcs", "sensor"]
-)
-
-check_gcs_data_object_existence = GCSObjectExistenceSensor(
-    task_id='check_gcs_data_object_existence',
-    bucket='cvs_poc_source_bucket',
-    object='data_file_*.txt',
-    use_glob=True,
-    mode='reschedule',  # Options are: { poke | reschedule }, default is poke. 
-    soft_fail=False,  # Set to true to mark the task as SKIPPED on failure
-    poke_interval=10,
-    timeout=180,
-    sla=timedelta(seconds=60),
-    dag=dag
-)
-
-check_gcs_validation_object_existence = GCSObjectExistenceSensor(
-    task_id='check_gcs_validation_object_existence',
-    bucket='cvs_poc_source_bucket',
-    object='validation_file_*.txt',
-    use_glob=True,
-    mode='reschedule',  # Options are: { poke | reschedule }, default is poke. 
-    soft_fail=False,  # Set to true to mark the task as SKIPPED on failure
-    poke_interval=10,
-    timeout=180,
-    dag=dag
-)
-
-
-def response_check(response, task_instance):
-    correct_result = 'request_id' in response.json()
-    return correct_result
-
-
-call_api = HttpOperator(
-    task_id='call_api',
-    http_conn_id='API_test_start',
-    endpoint=None,
-    method='POST',
-    data=json.dumps({'id': 'test_call_cvs'}),
-    headers={'Content-Type': 'application/json'},
-    response_check=response_check,
-    log_response=True,
-    dag=dag,
-)
-
-
-def response_check_poke(response, task_instance):
-    print(response.text)
-    correct_result = response.json()["status"] == "completed"
-    return correct_result
-
-
-wait_for_api_response = HttpSensor(
-    task_id='wait_for_api_response',
-    http_conn_id='API_test_poke',
-    endpoint=None,
-    method='GET',
-    headers={"Content-Type": "application/json"},
-    # request_params="{{ ti.xcom_pull(task_ids='call_api') }}",
-    request_params={'request_id': 'test_call_cvs'},
-    response_check=response_check_poke,
-    poke_interval=10,
-    mode='reschedule',
-    dag=dag
 )
 
 trigger_internal_dag = TriggerDagRunOperator(
