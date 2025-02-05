@@ -17,7 +17,7 @@ default_args = {
 }
 
 dag = DAG(
-    dag_id='file_sensor_dag',
+    dag_id='alloydb_hook_dag',
     start_date=datetime(2025, 1, 1, 0, 0),
     schedule=None,
     default_args=default_args,
