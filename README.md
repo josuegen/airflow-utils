@@ -10,4 +10,5 @@ Utilities for Apache Airflow
 |externally_triggered_dag.py | A sample DAG that is being triggered from another DAG in a different Airflow Composer instance (dag_triggerer.py) |
 |internally_triggered_dag.py | A sample DAG that is being triggered from another DAG in a the same Airflow Composer instance (dag_triggerer.py) |
 |dataproc_operator_dag.py |   Shows the woprflow to create a Dataproc cluster, Submit a job to the cvreated Dataproc cluster and Delete the created cluster after job completion |
+|alloydb_hook_demo.py | This DAG demoes how to interact with AlloyDB using the Client extracted from an AlloyDB hook |
 
