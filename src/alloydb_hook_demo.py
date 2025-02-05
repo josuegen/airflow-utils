@@ -35,7 +35,7 @@ def perform_ops_with_hook():
     alloydb_client = get_alloy_db_admin_client()
 
     """
-    From here, you can execute wahtever methos is available for the client 
+    From here, you can execute whatever method is available for the client 
     https://cloud.google.com/python/docs/reference/alloydb/latest/google.cloud.alloydb_v1.services.alloy_db_admin.AlloyDBAdminClient#methods
     """
 
