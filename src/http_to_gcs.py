@@ -62,15 +62,30 @@ class HttpToGCSOperator(BaseOperator):
     :param tcp_keep_alive_count: The TCP Keep Alive count parameter (corresponds to ``socket.TCP_KEEPCNT``)
     :param tcp_keep_alive_interval: The TCP Keep Alive interval parameter (corresponds to
         ``socket.TCP_KEEPINTVL``)
-    :param bucket_name: Name of the GCS bucket where to save the object. (templated)
-    :param object_name: The object name to set when uploading the file. (templated)
-        It can have ther full prefix for the file.
-    :param gcp_conn_id: Connection id of the S3 connection to use
+    :param gcp_conn_id: The connection ID to use when fetching connection info.
+    :param impersonation_chain: Optional service account to impersonate using short-term credentials, 
+        or chained list of accounts required to get the access_token of the last account in the list,
+        which will be impersonated in the request. If set as a string,
+        the account must grant the originating account the Service Account Token Creator IAM role.
+        If set as a sequence, the identities from the list must grant Service Account Token Creator IAM role to the directly preceding identity,
+        with first account from the list granting this role to the originating account.
+    :param bucket_name: The bucket to upload to.
+    :param object_name: The object name to set when uploading the file.
+    :param mime_type: The file mime type set when uploading the file.
+    :param gzip: Option to compress local file or file data for upload
+    :param encoding: bytes encoding for file data if provided as string
+    :param chunk_size: Blob chunk size.
+    :param timeout: Request timeout in seconds.
+    :param num_max_attempts: Number of attempts to try to upload the file.
+    :param metadata: The metadata to be uploaded with the file.
+    :param cache_contro: Cache-Control metadata field.
+    :param user_project: The identifier of the Google Cloud project to bill for the request. Required for Requester Pays buckets.
     """
 
     template_fields: Sequence[str] = (
         "http_conn_id", "endpoint", "data",
-        "headers", "bucket_name", "object_name"
+        "headers", "gcp_conn_id","bucket_name",
+        "object_name", 
     )
     template_fields_renderers = {"headers": "json", "data": "py"}
     template_ext: Sequence[str] = ()
