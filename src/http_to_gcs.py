@@ -165,7 +165,7 @@ class HttpToGCSOperator(BaseOperator):
     def gcs_hook(self) -> GCSHook:
         """Create and return an GCSHook."""
         return GCSHook(
-            gcp_conn_id=self.aws_conn_id,
+            gcp_conn_id=self.gcp_conn_id,
             impersonation_chain=self.impersonation_chain
         )
 
