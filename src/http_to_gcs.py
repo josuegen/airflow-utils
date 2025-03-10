@@ -15,7 +15,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-"""This module contains operator to move data from HTTP endpoint to GCS."""
+"""This module contains operator to move data from HTTP endpoint to S3."""
 
 from __future__ import annotations
 
@@ -91,13 +91,19 @@ class HttpToGCSOperator(BaseOperator):
         tcp_keep_alive_idle: int = 120,
         tcp_keep_alive_count: int = 20,
         tcp_keep_alive_interval: int = 30,
+        gcp_conn_id: str = "google_cloud_default",
+        impersonation_chain: str | Sequence[str] | None = None,
         bucket_name: str | None = None,
         object_name: str,
-        replace: bool = False,
-        encrypt: bool = False,
-        acl_policy: str | None = None,
-        aws_conn_id: str | None = "aws_default",
-        verify: str | bool | None = None,
+        mime_type: str | None = None,
+        gzip: bool = False,
+        encoding: str | None = None,
+        chunk_size: int | None = None,
+        timeout: int | None = None,
+        num_max_attempts: int = 3,
+        metadata: dict | None = None,
+        cache_control: str | None = None,
+        user_project: str | None = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -113,13 +119,19 @@ class HttpToGCSOperator(BaseOperator):
         self.tcp_keep_alive_idle = tcp_keep_alive_idle
         self.tcp_keep_alive_count = tcp_keep_alive_count
         self.tcp_keep_alive_interval = tcp_keep_alive_interval
+        self.gcp_conn_id = gcp_conn_id
+        self.impersonation_chain = impersonation_chain
         self.bucket_name = bucket_name
         self.object_name = object_name
-        self.replace = replace
-        self.encrypt = encrypt
-        self.acl_policy = acl_policy
-        self.aws_conn_id = aws_conn_id
-        self.verify = verify
+        self.mime_type = mime_type
+        self.gzip = gzip
+        self.encoding = encoding
+        self.chunk_size = chunk_size
+        self.timeout = timeout
+        self.num_max_attempts = num_max_attempts
+        self.metadata = metadata
+        self.cache_control = cache_control
+        self.user_project = user_project
 
     @cached_property
     def http_hook(self) -> HttpHook:
@@ -139,20 +151,30 @@ class HttpToGCSOperator(BaseOperator):
         """Create and return an GCSHook."""
         return GCSHook(
             gcp_conn_id=self.aws_conn_id,
-            verify=self.verify,
+            impersonation_chain=self.impersonation_chain
         )
 
     def execute(self, context: Context):
         self.log.info("Calling HTTP method")
         response = self.http_hook.run(
-            self.endpoint,
-            self.data,
-            self.headers,
-            self.extra_options
+            endpoint=self.endpoint,
+            data=self.data,
+            headers=self.headers,
+            extra_options=self.extra_options
         )
 
+        self.log.info("Uploading to GCS")
         self.gcs_hook.upload(
             data=response.content,
             bucket_name=self.bucket_name,
-            object_name=self.object_name
+            object_name=self.object_name,
+            mime_type=self.mime_type,
+            gzip=self.gzip,
+            encoding=self.encoding or response.encoding,
+            chunk_size=self.chunk_size,
+            timeout=self.timeout,
+            num_max_attempts=self.num_max_attempts,
+            metadata=self.metadata,
+            cache_control=self.cache_control,
+            user_project=self.user_project
         )
