@@ -26,6 +26,7 @@ from airflow.models import BaseOperator
 from airflow.providers.google.cloud.hooks.gcs import GCSHook
 from airflow.providers.http.hooks.http import HttpHook
 
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
@@ -84,8 +85,8 @@ class HttpToGCSOperator(BaseOperator):
 
     template_fields: Sequence[str] = (
         "http_conn_id", "endpoint", "data",
-        "headers", "gcp_conn_id","bucket_name",
-        "object_name", 
+        "headers", "gcp_conn_id", "bucket_name",
+        "object_name"
     )
     template_fields_renderers = {"headers": "json", "data": "py"}
     template_ext: Sequence[str] = ()
@@ -108,7 +109,7 @@ class HttpToGCSOperator(BaseOperator):
         tcp_keep_alive_interval: int = 30,
         gcp_conn_id: str = "google_cloud_default",
         impersonation_chain: str | Sequence[str] | None = None,
-        bucket_name: str | None = None,
+        bucket_name: str,
         object_name: str,
         mime_type: str | None = None,
         gzip: bool = False,
