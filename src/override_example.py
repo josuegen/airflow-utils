@@ -33,9 +33,8 @@ class BigQueryInsertJobOperatorCVS(BigQueryInsertJobOperator):
         try:
             job_id = super().execute(context)
         except Exception as e:
-        #task_instance = context["ti"].refresh_from_db()
             self.log.info("Producing adhoc XCOMs")
-            task_instance = context["ti"]
+            task_instance = context["ti"].refresh_from_db()
             # State Xcom push
             state = task_instance.state if task_instance.state != "running" else "success"
             task_instance.xcom_push(key="status", value=state)
