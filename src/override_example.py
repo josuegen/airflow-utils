@@ -30,20 +30,22 @@ class BigQueryInsertJobOperatorCVS(BigQueryInsertJobOperator):
         super().__init__(**kwargs)
 
     def execute(self, context: Any) -> None:
+        state = "success"
         try:
             job_id = super().execute(context)
         except Exception as e:
+            state = "failed"
+            raise AirflowException("Wrapped BigQuery Job failed.", e)
+        finally:
             self.log.info("Producing adhoc XCOMs")
-            task_instance = context["ti"].refresh_from_db()
+            task_instance = context["ti"]
             # State Xcom push
-            state = task_instance.state if task_instance.state != "running" else "success"
             task_instance.xcom_push(key="status", value=state)
             # End date Xcom push
             # This approach will capture the exit time (after retries, etc)
             task_instance.xcom_push(key="end_timestamp", value=datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S%Z"))
             # Start date Xcom push
             task_instance.xcom_push(key="start_timestamp", value=task_instance.start_date.strftime("%Y-%m-%d %H:%M:%S%Z"))
-            raise AirflowException("BigQuery Job failed.", e)
 
 insert_query_job = BigQueryInsertJobOperatorCVS(
     task_id="insert_query_job",
@@ -57,7 +59,6 @@ insert_query_job = BigQueryInsertJobOperatorCVS(
     dag=dag,
     retries=1,
     retry_delay=timedelta(seconds=10)
-    
 )
 
 insert_query_job
