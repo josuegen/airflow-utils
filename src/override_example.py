@@ -31,10 +31,12 @@ class BigQueryInsertJobOperatorCVS(BigQueryInsertJobOperator):
 
     def execute(self, context: Any) -> None:
         state = "success"
+        error_message = ""
         try:
             job_id = super().execute(context)
         except Exception as e:
             state = "failed"
+            error_message = e
             raise AirflowException("Wrapped BigQuery Job failed.", e)
         finally:
             self.log.info("Producing adhoc XCOMs")
@@ -46,6 +48,9 @@ class BigQueryInsertJobOperatorCVS(BigQueryInsertJobOperator):
             task_instance.xcom_push(key="end_timestamp", value=datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S%Z"))
             # Start date Xcom push
             task_instance.xcom_push(key="start_timestamp", value=task_instance.start_date.strftime("%Y-%m-%d %H:%M:%S%Z"))
+            # Error message Xcom push
+            task_instance.xcom_push(key="error_message", value=error_message)
+
 
 insert_query_job = BigQueryInsertJobOperatorCVS(
     task_id="insert_query_job",
@@ -59,6 +64,7 @@ insert_query_job = BigQueryInsertJobOperatorCVS(
     dag=dag,
     retries=1,
     retry_delay=timedelta(seconds=10)
+    
 )
 
 insert_query_job
