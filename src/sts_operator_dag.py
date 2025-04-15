@@ -60,7 +60,7 @@ def poke_transfer_op_status(operation_name: str):
 
     if status == GcpTransferOperationStatus.SUCCESS:
         return True
-    elif status == GcpTransferOperationStatus.IN_PROGRESS
+    elif status == GcpTransferOperationStatus.IN_PROGRESS:
         return False
     else:
         raise Exception(
