@@ -34,7 +34,7 @@ from airflow.models import BaseOperator
 from airflow.providers.google.cloud.hooks.gcs import GCSHook
 from airflow.providers.google.common.links.storage import StorageLink
 
-from airflow.providers.ftp.hooks.ftp import FTPHook
+from airflow.providers.ftp.hooks.ftp import FTPHook, FTPSHook
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -42,6 +42,40 @@ if TYPE_CHECKING:
 
 
 class FTPtoGCSOperator(BaseOperator):
+    """
+    Transfer files to Google Cloud Storage from FTP server.
+
+    :param source_path: The sftp remote path. This is the specified file path
+        for downloading the single file or multiple files from the FTP server.
+    :param destination_bucket: The bucket to upload to.
+    :param destination_path: The destination name of the object in the
+        destination Google Cloud Storage bucket.
+        If destination_path is not provided file/files will be placed in the
+        main bucket path.
+    :param gcp_conn_id: (Optional) The connection ID used to connect to Google Cloud.
+    :param ftp_conn_id: The sftp connection id. The name or identifier for
+        establishing a connection to the FTP server.
+    :param mime_type: The mime-type string
+    :param gzip: Allows for file to be compressed and uploaded as gzip
+    :param move_object: When move object is True, the object is moved instead
+        of copied to the new location. This is the equivalent of a mv command
+        as opposed to a cp command.
+    :param impersonation_chain: Optional service account to impersonate using short-term
+        credentials, or chained list of accounts required to get the access_token
+        of the last account in the list, which will be impersonated in the request.
+        If set as a string, the account must grant the originating account
+        the Service Account Token Creator IAM role.
+        If set as a sequence, the identities from the list must grant
+        Service Account Token Creator IAM role to the directly preceding identity, with first
+        account from the list granting this role to the originating account (templated).
+    :param block_size: File is transferred in chunks of default size 8192 or as set by user
+    :param use_stream: Determines the transfer method from SFTP to GCS.
+        When ``False`` (default), the file downloads locally
+        then uploads (may require significant disk space).
+        When ``True``, the file streams directly without using local disk.
+        Defaults to ``False``.
+    :param use_ftps: Wether to use FTPS over FTP. Defaults to ``False``
+    """
 
     template_fields: Sequence[str] = (
         "source_path",
@@ -51,7 +85,7 @@ class FTPtoGCSOperator(BaseOperator):
     )
 
     operator_extra_links = (StorageLink(),)
-    ui_color = "#b0fc83"
+    ui_color = "#a2f5b8"
 
     def __init__(
         self,
@@ -67,6 +101,7 @@ class FTPtoGCSOperator(BaseOperator):
         move_object: bool = False,
         impersonation_chain: str | Sequence[str] | None = None,
         use_stream: bool = False,
+        use_ftps: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -82,10 +117,16 @@ class FTPtoGCSOperator(BaseOperator):
         self.move_object = move_object
         self.impersonation_chain = impersonation_chain
         self.use_stream = use_stream
+        self.use_ftps = use_ftps
 
     @cached_property
-    def ftp_hook(self) -> FTPHook:
-        """Create and return a FTPHook."""
+    def ftp_hook(self) -> FTPHook | FTPSHook:
+        """Create and return a FTPHook or FTPSHook."""
+        if self.use_ftps:
+            return FTPSHook(
+                ftp_conn_id=self.ftp_conn_id
+            )
+        
         return FTPHook(
             ftp_conn_id=self.ftp_conn_id
         )
