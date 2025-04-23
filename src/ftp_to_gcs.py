@@ -16,10 +16,8 @@
 # specific language governing permissions and limitations
 # under the License.
 """
-    This module contains operator to (pre/post) adjust files
-    in Teradata to BigQuery translation.
-
-    author: josuegen@google.com (github.com/josuegen)
+    This module contains operator to move files from a FTP(S) server
+    to a Google Cloud Storage destination.
 """
 
 from __future__ import annotations
